@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comer Aquí - A Las Brasas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        /* --- ESTILOS VISUALES --- */
+        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: #121212; background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px; color: #fff; padding-bottom: 90px; }
+        
+        header {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), #121212), 
+                        url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+            padding: 40px 20px 30px 20px; border-radius: 0 0 30px 30px;
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .btn-regresar { position: absolute; top: 20px; left: 20px; color: white; text-decoration: none; background: rgba(0, 0, 0, 0.6); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 5px; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); z-index: 10; }
+        
+        .carrito-header { position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; z-index: 100; transition: 0.3s; }
+        #badge-carrito { background: #ff5722; color: white; padding: 2px 8px; border-radius: 8px; font-size: 0.8rem; }
+
+        .logo-titulo h1 { margin: 0; font-family: 'Oswald', sans-serif; font-size: 2.5rem; color: #fff; text-shadow: 0 0 15px #ff5722; text-transform: uppercase; text-align: center;}
+        .logo-titulo .subtitulo-container { text-align: center; margin-top: 5px; }
+        .logo-titulo p { color: #ddd; font-size: 1rem; background: rgba(0,0,0,0.7); display: inline-block; padding: 4px 15px; border-radius: 10px; margin: 0 auto; }
+
+        .buscador-container input { width: 100%; padding: 15px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); background: rgba(30, 30, 30, 0.9); color: white; box-sizing: border-box; font-size: 1rem; margin-top: 20px;}
+        .categorias-container { display: flex; gap: 10px; overflow-x: auto; margin-top: 25px; padding-bottom: 10px; scrollbar-width: none; }
+        .btn-cat { background: #1e1e1e; color: #aaa; border: 1px solid #333; padding: 10px 20px; border-radius: 25px; white-space: nowrap; cursor: pointer; font-family: 'Oswald', sans-serif; transition: 0.3s; }
+        .btn-cat.activo { background: #ff5722; color: #fff; border-color: #ff5722; transform: scale(1.05); }
+
+        .grid-menu { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .producto-card { background: #1e1e1e; padding: 15px; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); border: 1px solid #2a2a2a; cursor: pointer; transition: 0.3s; }
+        .producto-card:active { transform: scale(0.97); }
+        
+        .img-container { width: 70px; height: 70px; border-radius: 15px; overflow: hidden; background: #252525; display: flex; align-items: center; justify-content: center; border: 1px solid #333; flex-shrink: 0; }
+        .img-container img { width: 100%; height: 100%; object-fit: cover; }
+
+        .info-prod { flex-grow: 1; }
+        .info-prod strong { display: block; font-size: 1.1rem; color: #fff; font-family: 'Oswald', sans-serif; }
+        .precio { color: #ff9100; font-weight: 700; display: block; margin-top: 3px; font-size: 1.2rem; }
+
+        /* MODALES */
+        dialog { background: #252525; color: white; border: 1px solid #333; border-radius: 20px; width: 95%; max-width: 450px; padding: 0; margin: auto; }
+        dialog::backdrop { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+        .modal-header { background: #1e1e1e; padding: 15px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
+        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .modal-footer { padding: 20px; background: #1e1e1e; border-top: 1px solid #333; }
+
+        .desc-modal { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; line-height: 1.4; border-left: 3px solid #ff5722; padding-left: 10px; }
+        .section-title { font-weight:bold; color:#ff9100; margin: 15px 0 10px 0; text-transform: uppercase; font-size: 0.85rem; }
+
+        .ingredientes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .checkbox-item { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; gap: 10px; padding: 10px; background: #121212; border-radius: 10px; border: 1px solid #333; font-size: 0.8rem; cursor: pointer; }
+        .checkbox-item input { width: 18px; height: 18px; accent-color: #ff5722; }
+
+        .combo-box { background: #2c1e1e; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px solid #5a2a2a; }
+        .combo-opciones { display: none; margin-top: 10px; }
+        .btn-confirmar { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; color: white; background: linear-gradient(to right, #ff512f, #dd2476); }
+        .btn-confirmar:disabled { background: #444; color: #999; cursor: not-allowed; }
+        .btn-agregar { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; color: white; background: #ff5722; }
+        input, select { width: 100%; padding: 12px; background: #121212; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="btn-regresar">⬅</a>
+        <div class="carrito-header" onclick="abrirCarrito()">🛒 <span id="badge-carrito">0</span></div>
+        <div class="logo-titulo">
+            <h1>🍽️ COMER AQUÍ</h1>
+            <div class="subtitulo-container"><p>A LAS BRASAS - PEDIDO A MESA</p></div>
+        </div>
+        <div class="buscador-container"><input type="text" id="input-buscador" placeholder="🔍 ¿Qué buscas hoy?" oninput="filtrarPorBusqueda()"></div>
+        <div class="categorias-container">
+            <button class="btn-cat activo" onclick="filtrarCategoria('todos', this)">🏠 Todo</button>
+            <button id="btn-promos" class="btn-cat" style="background:gold; color:black; display:none;" onclick="filtrarCategoria('promocion', this)">🎁 PROMOS</button>
+            <button class="btn-cat" onclick="filtrarCategoria('hamburguesas', this)">🍔 Burgers</button>
+            <button class="btn-cat" onclick="filtrarCategoria('alitas', this)">🍗 Alitas</button>
+            <button class="btn-cat" onclick="filtrarCategoria('snacks', this)">🍟 Snacks</button>
+            <button class="btn-cat" onclick="filtrarCategoria('bebidas', this)">🥤 Bebidas</button>
+        </div>
+    </header>
+
+    <main id="contenedor-menu" class="grid-menu"><p style="text-align:center; color:#888; margin-top: 50px;">🔄 Cargando menú...</p></main>
+
+    <dialog id="modal-detalle">
+        <div class="modal-header"><h2 id="modal-titulo" style="font-family:'Oswald'; margin:0;">Producto</h2><button onclick="cerrarDetalle()" style="background:none; border:none; color:white; font-size:1.5rem;">✕</button></div>
+        <div class="modal-body">
+            <p id="modal-descripcion" class="desc-modal"></p>
+
+            <div id="seccion-ingredientes">
+                <div class="section-title">🥕 ¿Quitar algo?</div>
+                <div class="ingredientes-grid" id="lista-ingredientes"></div>
+            </div>
+
+            <div id="seccion-extras">
+                <div class="section-title">➕ Agregar Extras</div>
+                <div class="ingredientes-grid" id="lista-extras"></div>
+            </div>
+
+            <div id="contenedor-combo" class="combo-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label id="label-precio-combo" style="color:#ff5722; font-weight:bold;">🍟🥤 ¿Combo? (+$45)</label>
+                    <input type="checkbox" id="check-combo" onchange="toggleCombo()" style="width:22px; height:22px;">
+                </div>
+                <div id="opciones-combo" class="combo-opciones">
+                    <div id="desc-combo-sheet" style="font-size:0.8rem; color:#aaa; margin-bottom:10px;"></div>
+                    <select id="select-refresco"></select>
+                    <div style="font-size:0.8rem; color:#ccc; margin-bottom:5px;">Papas con:</div>
+                    <div class="ingredientes-grid" id="lista-toppings-combo"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn-agregar" onclick="agregarAlCarrito()">AGREGAR - $<span id="precio-btn">0</span></button></div>
+    </dialog>
+
+    <dialog id="modal-carrito">
+        <div class="modal-header"><h2>📝 Confirmar</h2><button onclick="cerrarCarrito()" style="background:none; border:none; color:white; font-size:1.5rem;">✕</button></div>
+        <div class="modal-body">
+            <ul id="lista-carrito" style="list-style:none; padding:0; border-bottom:1px dashed #444; padding-bottom:10px;"></ul>
+            <label>👤 Tu Nombre:</label><input type="text" id="input-nombre" placeholder="¿A nombre de quién?" oninput="validar()">
+            <label>💳 Pago:</label>
+            <select id="select-pago" onchange="validar()">
+                <option value="" disabled selected>-- Elige --</option>
+                <option value="Efectivo">💵 Efectivo</option>
+                <option value="Tarjeta">💳 Tarjeta / Transferencia</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:bold; margin-bottom:10px;"><span>Total:</span> <span id="total-carrito" style="color:#ff9100;">$0</span></div>
+            <button class="btn-confirmar" id="btn-finalizar" onclick="enviarPedidoLocal()" disabled>📲 ENVIAR A COCINA</button>
+        </div>
+    </dialog>
+
+    <script>
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSY-Hcv4LFQFcS0wVay2skfafx8gjrhcfWCIlmqG9zAxwJdS3a0_aUcd55LmDrBpKjwWxjWEujYRB0l/pub?output=csv";
+        const WHATSAPP = "5535151557"; 
+        let PRECIO_COMBO = 45, DESC_COMBO = "", LISTA_REFRESCOS = [], LISTA_TOPPINGS = [];
+        let menuData = [], carrito = [], productoActual = null, filtro = 'todos';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Papa.parse(SHEET_URL, {
+                download: true, header: true, skipEmptyLines: true,
+                transformHeader: h => h.toLowerCase().trim(),
+                complete: (results) => {
+                    const data = results.data;
+                    data.forEach(f => {
+                        const n = (f.nombre || "").toLowerCase().trim();
+                        const c = (f.ingredientes || f.descripcion || "").trim();
+                        if(n === "config_combo") {
+                            PRECIO_COMBO = parseInt(f.precio) || 45;
+                            DESC_COMBO = f.descripcion || "Incluye Papas y Refresco";
+                        }
+                        if(n === "opciones_refresco") LISTA_REFRESCOS = c.split(',').map(s => s.trim());
+                        if(n === "opciones_topping") LISTA_TOPPINGS = c.split(',').map(s => s.trim());
+                    });
+                    
+                    const claves = ["config_combo", "opciones_refresco", "opciones_topping"];
+                    menuData = data.filter(f => {
+                        const n = (f.nombre || "").toLowerCase().trim();
+                        return n !== "" && !claves.includes(n);
+                    }).map(f => ({
+                        nombre: f.nombre, 
+                        precio: parseInt(f.precio) || 0,
+                        descripcion: f.descripcion || "",
+                        cat: (f.categoria || "otros").toLowerCase().replace(/\s+/g, ''),
+                        ings: (f.ingredientes || "").split(',').map(x => x.trim()).filter(x => x.length > 0),
+                        extras: parseExtras(f.extras || ""),
+                        imagen: f.imagen || ""
+                    }));
+                    renderizar();
+                }
+            });
+        });
+
+        function parseExtras(str) {
+            if(!str) return [];
+            return str.split(',').map(item => {
+                const parts = item.split(':');
+                return { nombre: parts[0].trim(), precio: parseInt(parts[1]) || 0 };
+            });
+        }
+
+        function renderizar(bus = '') {
+            const cont = document.getElementById('contenedor-menu');
+            const btnP = document.getElementById('btn-promos');
+            cont.innerHTML = '';
+            const hayP = menuData.some(p => p.cat.includes('promocion'));
+            if(btnP) btnP.style.display = hayP ? 'block' : 'none';
+
+            const fil = menuData.filter(p => (filtro === 'todos' || p.cat === filtro) && p.nombre.toLowerCase().includes(bus.toLowerCase()));
+            if(fil.length === 0) { cont.innerHTML = '<p style="text-align:center; color:#666;">Sin resultados.</p>'; return; }
+            
+            fil.forEach(p => { 
+                cont.innerHTML += `
+                <div class="producto-card" onclick='abrirDetalle(${JSON.stringify(p)})'>
+                    <div class="img-container">${p.imagen ? `<img src="${p.imagen}">` : '🔥'}</div>
+                    <div class="info-prod">
+                        <strong>${p.nombre}</strong>
+                        <span class="precio">$${p.precio}</span>
+                    </div>
+                </div>`; 
+            });
+        }
+
+        function abrirDetalle(obj) {
+            productoActual = obj;
+            document.getElementById('modal-titulo').innerText = obj.nombre;
+            document.getElementById('modal-descripcion').innerText = obj.descripcion;
+            document.getElementById('modal-descripcion').style.display = obj.descripcion ? 'block' : 'none';
+            
+            // UI Combo
+            document.getElementById('label-precio-combo').innerText = `🍟🥤 ¿Combo? (+$${PRECIO_COMBO})`;
+            document.getElementById('desc-combo-sheet').innerText = DESC_COMBO;
+            document.getElementById('select-refresco').innerHTML = LISTA_REFRESCOS.map(r => `<option>${r}</option>`).join('');
+            document.getElementById('lista-toppings-combo').innerHTML = LISTA_TOPPINGS.map(t => `<label class="checkbox-item"><input type="checkbox" class="topping-papa" value="${t}"> ${t}</label>`).join('');
+            
+            // Ingredientes y Extras
+            document.getElementById('lista-ingredientes').innerHTML = obj.ings.map(i => `<label class="checkbox-item"><input type="checkbox" class="check-ing" value="${i}" checked> ${i}</label>`).join('');
+            document.getElementById('seccion-ingredientes').style.display = obj.ings.length ? 'block' : 'none';
+
+            document.getElementById('lista-extras').innerHTML = obj.extras.map(e => `<label class="checkbox-item"><input type="checkbox" class="check-extra" value="${e.nombre}" data-precio="${e.precio}" onchange="actualizarPrecio()"> +${e.nombre} (+$${e.precio})</label>`).join('');
+            document.getElementById('seccion-extras').style.display = obj.extras.length ? 'block' : 'none';
+
+            document.getElementById('check-combo').checked = false;
+            const c = obj.cat.toLowerCase();
+            document.getElementById('contenedor-combo').style.display = (c.includes('bebida') || c.includes('snack')) ? 'none' : 'block';
+            
+            toggleCombo();
+            document.getElementById('modal-detalle').showModal();
+        }
+
+        function toggleCombo() { document.getElementById('opciones-combo').style.display = document.getElementById('check-combo').checked ? 'block' : 'none'; actualizarPrecio(); }
+        
+        function actualizarPrecio() { 
+            let t = productoActual.precio; 
+            if(document.getElementById('check-combo').checked) t += PRECIO_COMBO;
+            document.querySelectorAll('.check-extra:checked').forEach(ex => t += parseInt(ex.dataset.precio));
+            document.getElementById('precio-btn').innerText = t; 
+        }
+
+        function agregarAlCarrito() {
+            const q = []; document.querySelectorAll('.check-ing:not(:checked)').forEach(c => q.push(c.value));
+            const ex = []; document.querySelectorAll('.check-extra:checked').forEach(c => ex.push(c.value));
+            let ci = "";
+            if(document.getElementById('check-combo').checked) {
+                const r = document.getElementById('select-refresco').value;
+                const ts = Array.from(document.querySelectorAll('.topping-papa:checked')).map(t => t.value);
+                ci = `Combo: ${r} + Papas (${ts.length ? ts.join(',') : 'Solas'})`;
+            }
+            carrito.push({ nombre: productoActual.nombre, precio: parseInt(document.getElementById('precio-btn').innerText), sin: q, extras: ex, combo: ci });
+            document.getElementById('badge-carrito').innerText = carrito.length;
+            document.getElementById('modal-detalle').close();
+        }
+
+        function abrirCarrito() {
+            const ul = document.getElementById('lista-carrito'); ul.innerHTML = '';
+            let t = 0;
+            carrito.forEach((item, i) => {
+                t += item.precio;
+                ul.innerHTML += `<li style="border-bottom:1px solid #333; padding:10px 0; display:flex; justify-content:space-between;">
+                    <div><strong>${item.nombre}</strong><br>
+                    <small style="color:#aaa;">${item.combo ? '✨'+item.combo : ''} ${item.extras.length ? '➕'+item.extras.join(',') : ''} ${item.sin.length ? '🚫Sin:'+item.sin.join(',') : ''}</small></div>
+                    <div>$${item.precio} <button onclick="borrar(${i})" style="color:red; background:none; border:none;">✕</button></div></li>`;
+            });
+            document.getElementById('total-carrito').innerText = "$" + t;
+            validar(); document.getElementById('modal-carrito').showModal();
+        }
+
+        function borrar(i) { carrito.splice(i,1); document.getElementById('badge-carrito').innerText = carrito.length; abrirCarrito(); }
+        function cerrarDetalle() { document.getElementById('modal-detalle').close(); }
+        function cerrarCarrito() { document.getElementById('modal-carrito').close(); }
+        function filtrarCategoria(cat, btn) { document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('activo')); btn.classList.add('activo'); filtro = cat; renderizar(document.getElementById('input-buscador').value); }
+        function filtrarPorBusqueda() { renderizar(document.getElementById('input-buscador').value); }
+        function validar() { const n = document.getElementById('input-nombre').value.trim(); const p = document.getElementById('select-pago').value; document.getElementById('btn-finalizar').disabled = !(carrito.length > 0 && n && p); }
+
+        function enviarPedidoLocal() {
+            const n = document.getElementById('input-nombre').value, p = document.getElementById('select-pago').value;
+            let txt = `*¡ORDEN PARA MESA!* 🍽️\n👤 *Cliente:* ${n}\n💳 *Pago:* ${p}\n------------------\n`;
+            carrito.forEach(i => {
+                txt += `▪️ *${i.nombre}* ($${i.precio})\n`;
+                if(i.combo) txt += `   └ ${i.combo}\n`;
+                if(i.extras.length) txt += `   └ Extras: ${i.extras.join(', ')}\n`;
+                if(i.sin.length) txt += `   └ Sin: ${i.sin.join(', ')}\n`;
+            });
+            txt += `------------------\n💰 *TOTAL: ${document.getElementById('total-carrito').innerText}*`;
+            window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`, '_blank');
+            carrito = []; document.getElementById('badge-carrito').innerText = "0"; cerrarCarrito();
+        }
+    </script>
+</body>
+</html>

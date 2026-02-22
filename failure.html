@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❌ Pago no completado - A Las Brasas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+            background-image: radial-gradient(#222 1px, transparent 1px);
+            background-size: 20px 20px; color: #fff;
+            display: flex; align-items: center; justify-content: center; min-height: 100vh;
+        }
+        .container {
+            text-align: center; background: rgba(30, 30, 30, 0.9);
+            padding: 40px; border-radius: 30px; border: 2px solid #ff5722;
+            max-width: 500px; width: 90%; box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+        }
+        .icon { font-size: 80px; margin-bottom: 20px; }
+        h1 { font-family: 'Oswald', sans-serif; color: #ff5722; text-transform: uppercase; margin: 0; }
+        p { color: #ccc; margin: 15px 0; }
+        .info-box {
+            background: #1e1e1e; padding: 20px; border-radius: 15px;
+            margin: 25px 0; border: 1px dashed #444; text-align: center;
+        }
+        .btn-group { display: flex; flex-direction: column; gap: 10px; }
+        .btn {
+            display: block; padding: 15px; border-radius: 12px;
+            font-weight: bold; text-decoration: none; transition: 0.3s;
+        }
+        .btn-retry {
+            background: linear-gradient(135deg, #ff5722, #d84315); color: white;
+        }
+        .btn-help {
+            background: #333; color: #fff; border: 1px solid #444;
+        }
+        .btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⚠️</div>
+        <h1>Algo salió mal</h1>
+        <p>No pudimos procesar tu pago en este momento. Tu pedido no ha sido registrado.</p>
+        
+        <div class="info-box">
+            <p style="margin: 0; font-size: 0.9rem;">
+                Puede ser un problema con la tarjeta o falta de fondos. No se ha realizado ningún cargo.
+            </p>
+        </div>
+
+        <div class="btn-group">
+            <div class="btn-group">
+    <a href="index.html?v=1.1" class="btn btn-retry">REINTENTAR PAGO</a>
+    <a href="4464046298" class="btn btn-help">NECESITO AYUDA</a>
+</div>
+        </div>
+        
+        <p style="margin-top: 20px;"><a href="index.html" style="color: #888; text-decoration: none; font-size: 0.8rem;">Volver al inicio</a></p>
+    </div>
+</body>
+</html>

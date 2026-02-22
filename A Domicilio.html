@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Domicilio - A Las Brasas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    
+    <style>
+        /* --- ESTILOS VISUALES --- */
+        body { 
+            margin: 0; font-family: 'Poppins', sans-serif; 
+            background-color: #121212;
+            background-image: radial-gradient(#222 1px, transparent 1px);
+            background-size: 20px 20px; color: #fff; padding-bottom: 90px; 
+        }
+        
+        header {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), #121212), 
+                        url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+            padding: 40px 20px 30px 20px; border-radius: 0 0 30px 30px;
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .btn-regresar {
+            position: absolute; top: 20px; left: 20px;
+            color: white; text-decoration: none;
+            background: rgba(0, 0, 0, 0.6); padding: 8px 15px; border-radius: 20px;
+            font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 5px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); z-index: 10;
+        }
+
+        .carrito-header {
+            position: absolute; 
+            top: 20px; 
+            right: 20px;
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            padding: 8px 12px;
+            border-radius: 12px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center;
+            gap: 5px; 
+            font-weight: bold; 
+            z-index: 100; 
+            transition: 0.3s;
+            color: white;
+        }
+        
+        #badge-carrito { background: #ff5722; color: white; padding: 2px 7px; border-radius: 6px; font-size: 0.75rem; }
+
+        .logo-titulo h1 { margin: 0; font-family: 'Oswald', sans-serif; font-size: 2.2rem; color: #fff; text-shadow: 0 0 15px #ff5722; text-transform: uppercase; text-align: center; }
+        .logo-titulo p { color: #ddd; font-size: 0.9rem; margin-top: 5px; background: rgba(0,0,0,0.5); display: inline-block; padding: 2px 10px; border-radius: 10px; text-align: center; width: 100%; box-sizing: border-box; }
+
+        .buscador-container input { width: 100%; padding: 15px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); background: rgba(30, 30, 30, 0.9); color: white; box-sizing: border-box; font-size: 1rem; margin-top: 20px; }
+
+        .categorias-container { display: flex; gap: 10px; overflow-x: auto; margin-top: 25px; padding-bottom: 10px; scrollbar-width: none; }
+        .btn-cat { background: #1e1e1e; color: #aaa; border: 1px solid #333; padding: 10px 20px; border-radius: 25px; white-space: nowrap; cursor: pointer; font-family: 'Oswald', sans-serif; transition: 0.3s; }
+        .btn-cat.activo { background: #ff5722; color: #fff; border-color: #ff5722; transform: scale(1.05); }
+        
+        .btn-promo-smart { 
+            display: none; background: linear-gradient(135deg, #ffd700, #ff5722) !important; 
+            color: #000 !important; font-weight: bold; border: none !important; 
+            animation: pulse-gold 2s infinite; 
+        }
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); } }
+
+        .grid-menu { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .producto-card { background: #1e1e1e; padding: 15px; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); border: 1px solid #2a2a2a; cursor: pointer; transition: 0.3s; }
+        
+        .img-container { width: 80px; height: 80px; border-radius: 15px; overflow: hidden; background: #252525; display: flex; align-items: center; justify-content: center; border: 1px solid #333; flex-shrink: 0; }
+        .img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .info-prod strong { display: block; font-size: 1.1rem; color: #fff; font-family: 'Oswald', sans-serif; }
+        .precio { color: #ff9100; font-weight: 700; display: block; margin-top: 3px; font-size: 1.2rem; }
+
+        dialog { background: #252525; color: white; border: 1px solid #333; border-radius: 20px; width: 95%; max-width: 450px; padding: 0; margin: auto; }
+        dialog::backdrop { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+        .modal-header { background: #1e1e1e; padding: 15px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
+        .modal-body { padding: 20px; max-height: 65vh; overflow-y: auto; }
+        .modal-footer { padding: 20px; background: #1e1e1e; border-top: 1px solid #333; }
+
+        .section-title { font-weight:bold; color:#ff9100; margin: 15px 0 10px 0; text-transform: uppercase; font-size: 0.85rem; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .ingredientes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .checkbox-item { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; gap: 10px; padding: 10px; background: #121212; border-radius: 10px; border: 1px solid #333; font-size: 0.8rem; cursor: pointer; }
+        .checkbox-item input { width: 18px; height: 18px; accent-color: #ff5722; }
+
+        .combo-box { background: #2c1e1e; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px solid #5a2a2a; }
+        .combo-opciones { display: none; margin-top: 10px; }
+        .btn-confirmar { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; color: white; background: linear-gradient(to right, #ff512f, #dd2476); }
+        .btn-confirmar:disabled { background: #444; color: #999; cursor: not-allowed; }
+        .btn-agregar { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; color: white; background: #ff5722; }
+        .btn-gps { background: transparent; border: 1px dashed #ff5722; color: #ff5722; padding: 10px; width: 100%; border-radius: 10px; cursor: pointer; margin-bottom: 10px; }
+
+        input, select, textarea { width: 100%; padding: 12px; background: #121212; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; margin-bottom: 10px; }
+
+        @media (max-width: 380px) {
+            .logo-titulo h1 { font-size: 1.8rem; }
+            .carrito-header { padding: 6px 10px; font-size: 0.9rem; top: 15px; right: 10px; }
+            .btn-regresar { top: 15px; left: 10px; padding: 6px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="btn-regresar">⬅</a>
+        <div class="carrito-header" onclick="abrirCarrito()">🛒 <span id="badge-carrito">0</span></div>
+        <div class="logo-titulo">
+            <h1>A LAS BRASAS</h1>
+            <p>🔥 PEDIDO A DOMICILIO</p>
+        </div>
+        <div class="buscador-container"><input type="text" id="input-buscador" placeholder="🔍 ¿Qué buscas hoy?" oninput="filtrarPorBusqueda()"></div>
+        <div class="categorias-container">
+            <button class="btn-cat activo" onclick="filtrarCategoria('todos', this)">🏠 Todo</button>
+            <button id="btn-promos" class="btn-cat btn-promo-smart" onclick="filtrarCategoria('promocion', this)">🎁 PROMOS</button>
+            <button class="btn-cat" onclick="filtrarCategoria('hamburguesas', this)">🍔 Burgers</button>
+            <button class="btn-cat" onclick="filtrarCategoria('hotdogs', this)">🌭 Hot Dogs</button>
+            <button class="btn-cat" onclick="filtrarCategoria('alitas', this)">🍗 Alitas</button>
+            <button class="btn-cat" onclick="filtrarCategoria('snacks', this)">🍟 Snacks</button>
+            <button class="btn-cat" onclick="filtrarCategoria('bebidas', this)">🥤 Bebidas</button>
+        </div>
+    </header>
+
+    <main id="contenedor-menu" class="grid-menu"><p style="text-align:center; color:#888;">🔄 Cargando menú...</p></main>
+
+    <dialog id="modal-detalle">
+        <div class="modal-header"><h2 id="modal-titulo" style="font-family:'Oswald';">Producto</h2><button onclick="cerrarDetalle()" style="background:none; border:none; color:white; font-size:1.5rem;">✕</button></div>
+        <div class="modal-body">
+            <p id="modal-descripcion" style="font-size:0.9rem; color:#aaa; margin-bottom:15px; border-left:3px solid #ff5722; padding-left:10px;"></p>
+            <div id="seccion-ingredientes"><div class="section-title">🥕 ¿Quitar algo?</div><div class="ingredientes-grid" id="lista-ingredientes"></div></div>
+            <div id="seccion-extras"><div class="section-title">➕ Agregar Extras</div><div class="ingredientes-grid" id="lista-extras"></div></div>
+            
+            <div id="contenedor-combo" class="combo-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label id="label-precio-combo" style="color:#ff5722; font-weight:bold; cursor:pointer;" for="check-combo">🍟🥤 ¿Hacerlo Combo? (+$45)</label>
+                    <input type="checkbox" id="check-combo" onchange="toggleCombo()" style="width:22px; height:22px;">
+                </div>
+                <div id="opciones-combo" class="combo-opciones">
+                    <select id="select-refresco"></select>
+                    <div style="font-size:0.8rem; color:#ccc; margin-bottom:5px;">Papas con:</div>
+                    <div class="ingredientes-grid" id="lista-toppings-combo"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn-agregar" onclick="agregarAlCarrito()">AGREGAR - $<span id="precio-btn">0</span></button></div>
+    </dialog>
+
+    <dialog id="modal-carrito">
+        <div class="modal-header"><h2>🚚 Finalizar Pedido</h2><button onclick="cerrarCarrito()" style="background:none; border:none; color:white; font-size:1.5rem;">✕</button></div>
+        <div class="modal-body">
+            <ul id="lista-carrito" style="list-style:none; padding:0; border-bottom:1px dashed #444;"></ul>
+            <label>👤 Nombre:</label><input type="text" id="input-nombre" placeholder="Tu nombre..." oninput="validar()">
+            <label>📍 Dirección:</label>
+            <button class="btn-gps" onclick="obtenerUbicacion()">📍 Usar mi ubicación actual</button>
+            <textarea id="input-direccion" rows="2" placeholder="Calle, número y colonia..." oninput="validar()"></textarea>
+            <label>💳 Pago:</label>
+            <select id="select-pago" onchange="verificarMetodoPago()">
+                <option value="" disabled selected>-- Selecciona --</option>
+                <option value="Efectivo">💵 Efectivo (Contra entrega)</option>
+                <option value="Transferencia">🏦 Transferencia Directa</option>
+                <option value="MercadoPago">⚡ Pagar Online (Mercado Pago)</option>
+            </select>
+            
+            <div id="info-efectivo" style="display:none; background: #1a1a1a; padding: 10px; border-radius: 10px; border: 1px solid #444; margin-bottom: 10px;">
+                <label style="font-size: 0.85rem; color: #ff9100;">💵 ¿Con cuánto pagas? (Mínimo: <span id="minimo-pago">$0</span>):</label>
+                <input type="number" id="input-cambio" placeholder="Ej: 500" oninput="validar()" style="margin-top:5px; margin-bottom:0;">
+                <p id="error-cambio" style="color: #ff4444; font-size: 0.75rem; margin-top: 5px; display: none;">⚠️ El monto debe ser igual o mayor al total.</p>
+            </div>
+
+            <div id="wallet_container" style="margin-top:10px;"></div>
+        </div>
+        <div class="modal-footer">
+            <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:bold; margin-bottom:10px;"><span>Total:</span> <span id="total-carrito" style="color:#ff9100;">$0</span></div>
+            <button class="btn-confirmar" id="btn-finalizar" onclick="enviarWhatsapp()" disabled>📲 PEDIR POR WHATSAPP</button>
+        </div>
+    </dialog>
+
+    <script>
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSY-Hcv4LFQFcS0wVay2skfafx8gjrhcfWCIlmqG9zAxwJdS3a0_aUcd55LmDrBpKjwWxjWEujYRB0l/pub?output=csv";
+        const WHATSAPP = "5535151557"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbJqGP-liGO1cFuIeL8-SVNJbMAb3sA-pAP6bhuMe-2_XPWIzzQq3ebLSuf5omO7uU/exec";
+        const MP_PUBLIC_KEY = "APP_USR-d4cd009c-9ef2-47c4-a02c-f43f3a3c6c81";
+        const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' });
+
+        let PRECIO_COMBO = 45, LISTA_REFRESCOS = [], LISTA_TOPPINGS = [];
+        let BANCO_NOMBRE = "", BANCO_CLABE = "", BANCO_TITULAR = ""; 
+        let menuData = [], carrito = [], productoActual = null, filtro = 'todos';
+        let pagoValidadoOnline = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Papa.parse(SHEET_URL, {
+                download: true, header: true, skipEmptyLines: true,
+                transformHeader: h => h.toLowerCase().trim(),
+                complete: (results) => {
+                    const data = results.data;
+                    data.forEach(f => {
+                        const n = (f.nombre || "").toLowerCase().trim();
+                        const ing = (f.ingredientes || "").trim();
+                        if(n === "config_combo") PRECIO_COMBO = parseInt(f.precio) || 45;
+                        if(n === "opciones_refresco") LISTA_REFRESCOS = ing.split(',').map(s => s.trim());
+                        if(n === "opciones_topping") LISTA_TOPPINGS = ing.split(',').map(s => s.trim());
+                        if(n === "config_banco") BANCO_NOMBRE = ing;
+                        if(n === "config_clabe") BANCO_CLABE = ing;
+                        if(n === "config_titular") BANCO_TITULAR = ing;
+                    });
+                    menuData = data.filter(f => {
+                        const n = (f.nombre || "").toLowerCase().trim();
+                        const cat = (f.categoria || "").toLowerCase().trim();
+                        return n !== "" && cat !== "config" && !["config_combo", "opciones_refresco", "opciones_topping"].includes(n);
+                    }).map(f => ({
+                        nombre: f.nombre, precio: parseInt(f.precio) || 0, descripcion: f.descripcion || "",
+                        cat: (f.categoria || "otros").toLowerCase().replace(/\s+/g, ''),
+                        ings: (f.ingredientes || "").split(',').map(x => x.trim()).filter(x => x.length > 0),
+                        extras: parseExtras(f.extras || ""), imagen: f.imagen || ""
+                    }));
+                    renderizar();
+                }
+            });
+        });
+
+        function parseExtras(str) { return str ? str.split(',').map(item => { const parts = item.split(':'); return { nombre: parts[0].trim(), precio: parseInt(parts[1]) || 0 }; }) : []; }
+
+        function renderizar(bus = '') {
+            const cont = document.getElementById('contenedor-menu');
+            const btnP = document.getElementById('btn-promos');
+            cont.innerHTML = '';
+            const hayPromos = menuData.some(p => p.cat.includes('promocion'));
+            if(btnP) btnP.style.display = hayPromos ? 'block' : 'none';
+            const fil = menuData.filter(p => (filtro === 'todos' || p.cat === filtro) && p.nombre.toLowerCase().includes(bus.toLowerCase()));
+            if(fil.length === 0) { cont.innerHTML = '<p style="text-align:center; color:#666;">No hay productos.</p>'; return; }
+            fil.forEach(p => { 
+                cont.innerHTML += `<div class="producto-card" onclick='abrirDetalle(${JSON.stringify(p)})'>
+                    <div class="img-container">${p.imagen ? `<img src="${p.imagen}">` : '🔥'}</div>
+                    <div class="info-prod"><strong>${p.nombre}</strong><span class="precio">$${p.precio}</span></div>
+                </div>`; 
+            });
+        }
+
+        function abrirDetalle(obj) {
+            productoActual = obj;
+            document.getElementById('modal-titulo').innerText = obj.nombre;
+            document.getElementById('modal-descripcion').innerText = obj.descripcion || "";
+            document.getElementById('label-precio-combo').innerText = `🍟🥤 ¿Hacerlo Combo? (+$${PRECIO_COMBO})`;
+            document.getElementById('lista-ingredientes').innerHTML = obj.ings.map(i => `<label class="checkbox-item"><input type="checkbox" class="check-ing" value="${i}" checked> ${i}</label>`).join('');
+            document.getElementById('lista-extras').innerHTML = obj.extras.map(e => `<label class="checkbox-item"><input type="checkbox" class="check-extra" value="${e.nombre}" data-precio="${e.precio}" onchange="actualizarPrecio()"> +${e.nombre} (+$${e.precio})</label>`).join('');
+            document.getElementById('select-refresco').innerHTML = LISTA_REFRESCOS.map(r => `<option>${r}</option>`).join('');
+            document.getElementById('lista-toppings-combo').innerHTML = LISTA_TOPPINGS.map(t => `<label class="checkbox-item"><input type="checkbox" class="topping-papa" value="${t}"> ${t}</label>`).join('');
+            document.getElementById('check-combo').checked = false;
+            const sinCombo = obj.cat.includes('bebida') || obj.cat.includes('snack') || obj.cat.includes('promocion');
+            document.getElementById('contenedor-combo').style.display = sinCombo ? 'none' : 'block';
+            actualizarPrecio(); toggleCombo(); document.getElementById('modal-detalle').showModal();
+        }
+
+        function actualizarPrecio() { 
+            let t = productoActual.precio; 
+            if(document.getElementById('check-combo').checked) t += PRECIO_COMBO;
+            document.querySelectorAll('.check-extra:checked').forEach(ex => t += parseInt(ex.dataset.precio));
+            document.getElementById('precio-btn').innerText = t; 
+        }
+
+        function agregarAlCarrito() {
+            const q = []; document.querySelectorAll('.check-ing:not(:checked)').forEach(c => q.push(c.value));
+            const ex = []; document.querySelectorAll('.check-extra:checked').forEach(c => ex.push(c.value));
+            let ci = "";
+            if(document.getElementById('check-combo').checked) {
+                const r = document.getElementById('select-refresco').value;
+                const ts = Array.from(document.querySelectorAll('.topping-papa:checked')).map(t => t.value);
+                ci = `Combo: ${r} + Papas (${ts.length ? ts.join(',') : 'Solas'})`;
+            }
+            carrito.push({ nombre: productoActual.nombre, precio: parseInt(document.getElementById('precio-btn').innerText), sin: q, extras: ex, combo: ci });
+            document.getElementById('badge-carrito').innerText = carrito.length;
+            document.getElementById('modal-detalle').close();
+        }
+
+        async function verificarMetodoPago() {
+            const pago = document.getElementById('select-pago').value;
+            const container = document.getElementById('wallet_container');
+            const infoEfectivo = document.getElementById('info-efectivo'); 
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            
+            container.innerHTML = '';
+            infoEfectivo.style.display = 'none'; 
+            pagoValidadoOnline = false;
+
+            if (pago === 'Efectivo') {
+                infoEfectivo.style.display = 'block'; 
+                document.getElementById('minimo-pago').innerText = document.getElementById('total-carrito').innerText;
+                btnFinalizar.innerText = "📲 PEDIR POR WHATSAPP";
+                btnFinalizar.style.background = "linear-gradient(to right, #ff512f, #dd2476)";
+                validar();
+            } else if (pago === 'MercadoPago') {
+                const n = document.getElementById('input-nombre').value;
+                const d = document.getElementById('input-direccion').value;
+                if(!n || !d) { 
+                    alert("⚠️ Escribe nombre y dirección antes de pagar."); 
+                    document.getElementById('select-pago').value=""; 
+                    return; 
+                }
+                btnFinalizar.disabled = true;
+                btnFinalizar.innerText = "⏳ ESPERANDO PAGO ONLINE...";
+                container.innerHTML = `<p style="text-align:center; color:#888; font-size:0.8rem; margin-top:10px;">Cargando plataforma...</p>`;
+
+                try {
+                    const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ carrito, cliente: { nombre: n, direccion: d } }) });
+                    const res = await resp.json();
+                    if(res.id) {
+                        container.innerHTML = '';
+                        mp.bricks().create("wallet", "wallet_container", { 
+                            initialization: { preferenceId: res.id },
+                            callbacks: {
+                                onPaymentAccepted: () => {
+                                    // MODIFICACIÓN: Liberar botón WhatsApp tras pago exitoso
+                                    pagoValidadoOnline = true;
+                                    validar(); 
+                                    btnFinalizar.innerText = "✅ PAGO EXITOSO - ENVIAR A COCINA";
+                                    btnFinalizar.style.background = "#25D366"; // Color verde WhatsApp
+                                    container.innerHTML = '<p style="text-align:center; color:#25D366; font-weight:bold;">¡Pago aprobado! Pulsa el botón de abajo para notificar a la cocina.</p>';
+                                },
+                                onError: (e) => { container.innerHTML = '❌ Error al cargar Mercado Pago'; }
+                            }
+                        });
+                    }
+                } catch(e) { 
+                    container.innerHTML = '❌ Error de conexión'; 
+                    btnFinalizar.innerText = "📲 PEDIR POR WHATSAPP"; 
+                }
+            } else if (pago === 'Transferencia') {
+                container.innerHTML = `<div style="background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #ff5722; margin-top: 10px; text-align: left;">
+                    <p style="color: #ff5722; font-weight: bold; margin-top: 0; font-size: 0.9rem;">🏦 TRANSFERENCIA DIRECTA:</p>
+                    <p style="font-size: 0.85rem; margin: 4px 0;"><strong>Banco:</strong> ${BANCO_NOMBRE || 'Banco Azteca'}</p>
+                    <p style="font-size: 0.85rem; margin: 4px 0;"><strong>CLABE:</strong> ${BANCO_CLABE || 'No configurada'}</p>
+                    <p style="font-size: 0.85rem; margin: 4px 0;"><strong>Titular:</strong> ${BANCO_TITULAR || 'Tu nombre'}</p>
+                </div>`;
+                btnFinalizar.innerText = "📲 ENVIAR PEDIDO Y COMPROBANTE";
+                btnFinalizar.style.background = "linear-gradient(to right, #ff512f, #dd2476)";
+                validar();
+            } else {
+                btnFinalizar.innerText = "📲 PEDIR POR WHATSAPP";
+                btnFinalizar.style.background = "linear-gradient(to right, #ff512f, #dd2476)";
+                validar();
+            }
+        }
+
+        function enviarWhatsapp() {
+            const n = document.getElementById('input-nombre').value;
+            const d = document.getElementById('input-direccion').value;
+            const p = document.getElementById('select-pago').value;
+            const cambio = document.getElementById('input-cambio').value; 
+            
+            let estadoPago = pagoValidadoOnline ? `✅ *PAGO ONLINE CONFIRMADO*` : `💳 *Pago:* ${p}`;
+            
+            if (p === 'Efectivo' && cambio) {
+                estadoPago += ` (Paga con: $${cambio})`;
+            }
+
+            let txt = `*NUEVO PEDIDO A DOMICILIO* 🛵\n👤 *Cliente:* ${n}\n📍 *Dir:* ${d}\n${estadoPago}\n\n*DETALLE:*`;
+            carrito.forEach(i => {
+                txt += `\n- *${i.nombre}* ($${i.precio}) ${i.combo ? '\n   └ '+i.combo : ''}`;
+                if(i.extras.length) txt += `\n   └ + Extras: ${i.extras.join(', ')}`;
+                if(i.sin.length) txt += `\n   └ Sin: ${i.sin.join(', ')}`;
+            });
+            txt += `\n\n💰 *TOTAL: ${document.getElementById('total-carrito').innerText}*`;
+            window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`, '_blank');
+            if(pagoValidadoOnline || p !== 'MercadoPago') { carrito = []; document.getElementById('badge-carrito').innerText = "0"; cerrarCarrito(); }
+        }
+
+        function abrirCarrito() {
+            const ul = document.getElementById('lista-carrito'); ul.innerHTML = '';
+            let t = 0;
+            carrito.forEach((item, i) => {
+                t += item.precio;
+                ul.innerHTML += `<li style="padding:10px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
+                    <div><strong>${item.nombre}</strong><br><small>$${item.precio}</small></div>
+                    <button onclick="borrar(${i})" style="color:red; background:none; border:none;">✕</button>
+                </li>`;
+            });
+            document.getElementById('total-carrito').innerText = "$" + t;
+            validar(); document.getElementById('modal-carrito').showModal();
+        }
+
+        function borrar(i) { carrito.splice(i,1); document.getElementById('badge-carrito').innerText = carrito.length; abrirCarrito(); }
+        
+        function validar() { 
+            const n = document.getElementById('input-nombre').value.trim();
+            const d = document.getElementById('input-direccion').value.trim();
+            const p = document.getElementById('select-pago').value;
+            const btn = document.getElementById('btn-finalizar');
+            const cambioInput = document.getElementById('input-cambio');
+            const errorMsg = document.getElementById('error-cambio');
+            
+            let total = parseInt(document.getElementById('total-carrito').innerText.replace('$', '')) || 0;
+            let esValido = (carrito.length > 0 && n && d && p);
+
+            if (p === 'Efectivo') {
+                let montoCambio = parseInt(cambioInput.value) || 0;
+                if (montoCambio < total) {
+                    errorMsg.style.display = 'block';
+                    esValido = false;
+                } else {
+                    errorMsg.style.display = 'none';
+                }
+                if (!cambioInput.value) esValido = false; 
+            }
+
+            if (p === 'MercadoPago') { 
+                // El botón solo se habilita si Mercado Pago notificó éxito
+                btn.disabled = !pagoValidadoOnline; 
+            } else { 
+                btn.disabled = !esValido; 
+            }
+        }
+
+        function cerrarDetalle() { document.getElementById('modal-detalle').close(); }
+        function cerrarCarrito() { document.getElementById('modal-carrito').close(); }
+        function toggleCombo() { document.getElementById('opciones-combo').style.display = document.getElementById('check-combo').checked ? 'block' : 'none'; actualizarPrecio(); }
+        function filtrarCategoria(cat, btn) { document.querySelectorAll('.btn-cat').forEach(b => b.classList.remove('activo')); btn.classList.add('activo'); filtro = cat; renderizar(); }
+        function filtrarPorBusqueda() { renderizar(document.getElementById('input-buscador').value); }
+        function obtenerUbicacion() { navigator.geolocation.getCurrentPosition(pos => { document.getElementById('input-direccion').value = `📍 Ubicación: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`; validar(); }, () => alert("Activa el GPS para obtener tu ubicación.")); }
+    </script>
+</body>
+</html>
