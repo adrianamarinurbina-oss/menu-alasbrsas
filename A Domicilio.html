@@ -424,4 +424,5 @@
         function obtenerUbicacion() { navigator.geolocation.getCurrentPosition(pos => { document.getElementById('input-direccion').value = `📍 Ubicación: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`; validar(); }, () => alert("Activa el GPS para obtener tu ubicación.")); }
     </script>
 </body>
+
 </html>
